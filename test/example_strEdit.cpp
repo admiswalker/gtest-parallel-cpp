@@ -7,6 +7,7 @@ TEST(example, joint_a_b){
 }
 TEST(example, joint_a_b_with_x){
     ASSERT_STREQ(joint_a_b_with_x("a", "b", ", ").c_str(), "a, b");
+//    ASSERT_TRUE(false);
 }
 
 EXECUTE_TESTS();
