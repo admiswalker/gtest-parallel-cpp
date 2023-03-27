@@ -1,0 +1,1 @@
+# sample_separate-compilation-of-googletest
