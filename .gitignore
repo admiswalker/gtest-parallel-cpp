@@ -1,0 +1,6 @@
+exe
+__pycache__/
+googletest-master/
+
+tmpDir/
+tmp*/
