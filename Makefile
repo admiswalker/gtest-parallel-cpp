@@ -14,6 +14,7 @@ CFLAGS  = -L./googletest-master/build/lib -I./googletest-master/googletest/inclu
 CFLAGS += -std=c++11 # CFLAGS += -std=gnu++0x
 CFLAGS += -Wall
 CFLAGS += -O3
+CFLAGS += -fopenmp
 
 
 # when you need to check the change of files in lib, you need to change file name to a not-existing name like "FORCE_XXX".

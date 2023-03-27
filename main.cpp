@@ -1,13 +1,13 @@
 #include <iostream>
 #include <vector>
 
-void execute_test(std::vector<std::string>& ret_vErr, const std::string& exe_path){
+void execute_test(std::string& ret_err, const std::string& exe_path){
     
     int ret = system(exe_path.c_str());
     printf("\n");
     
     if(ret!=0){
-        ret_vErr.push_back(exe_path);
+        ret_err = exe_path;
     }
 }
 void print_error_files(const std::string& base_path, const std::vector<std::string>& vErr){
@@ -19,6 +19,17 @@ void print_error_files(const std::string& base_path, const std::vector<std::stri
         printf("  %s/%s\n", base_path.c_str(), vErr[i].c_str());
     }
     if(vErr.size()!=0){ printf("\n"); }
+}
+template<typename T>
+std::vector<T> rm_empty_vector(const std::vector<T>& vErr){
+    std::vector<std::string> ret_vErr;
+    
+    for(uint i=0; i<vErr.size(); ++i){
+        if(vErr[i].size()==0){ continue; }
+        ret_vErr.push_back(vErr[i]);
+    }
+    
+    return ret_vErr;
 }
 
 
@@ -32,14 +43,20 @@ int main(int argc, char** argv){
     printf("\n");
 
     std::string base_path = "./tmpMake/test";
-    std::vector<std::string> vErr;
+    std::vector<std::string> vExePath;
     
 
     // Testing binaries
-    execute_test(vErr, base_path+"/"+"example_math.exe");
-    execute_test(vErr, base_path+"/"+"example_strEdit.exe");
+    vExePath.push_back(base_path+"/"+"example_math.exe"   );
+    vExePath.push_back(base_path+"/"+"example_strEdit.exe");
+    std::vector<std::string> vErr(vExePath.size());
     
+    #pragma omp parallel for schedule(guided)
+    for(uint i=0; i<vExePath.size(); ++i){
+        execute_test(vErr[i], vExePath[i]);
+    }
 
+    vErr = rm_empty_vector(vErr);
     print_error_files(base_path, vErr);
     if(vErr.size()!=0){ return -1; }
     
