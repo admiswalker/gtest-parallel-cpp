@@ -64,6 +64,7 @@ clean:
 	-rm -rf googletest-master
 	@(find . -name "__pycache__" -type d | xargs rm -rf)
 	-rm -rf $(RMs)
+	-rm -rf $(TEMP_DIR)
 
 
 .PHONY: steps
