@@ -16,16 +16,15 @@ namespace console_color{
     std::string reset   = "\u001b[0m";
 }
 
-std::string system_stdout_stderr(const std::string& cmd){
+int system_stdout_stderr(std::string& ret, const std::string& cmd){
     std::string cmd_out_err = cmd + std::string(R"( 2>&1)"); // 2>&1: redirecting stderr to stdout.
     FILE* fp=popen(cmd_out_err.c_str(), "r");
-    if(fp==NULL){ printf("popen() was failed.\n"); return ""; }
+    if(fp==NULL){ printf("popen() was failed.\n"); return -1; }
     
-    std::string ret;
     char buf[1024];
     while(fgets(buf, 1024, fp) != NULL){ ret+=buf; }
     
-    return ret;
+    return pclose(fp);
 }
 void replaced(std::string& replace_target, const std::string& search_word, const std::string& replace_word){
     std::string::size_type pos(replace_target.find(search_word));
@@ -48,12 +47,11 @@ int count_word_num(const std::string& count_target, const std::string& search_wo
     return num;
 }
 void execute_test(int& ret_test_num, int& ret_pass_num, int& ret_err_num, std::string& ret_err_file_path, std::string& ret_str, const std::string& exe_path){
-    
-    ret_str = system_stdout_stderr(exe_path);
+    int ret = system_stdout_stderr(ret_str, exe_path);
     
     ret_test_num = count_word_num(ret_str, "[ RUN      ]");
     ret_pass_num = count_word_num(ret_str, "[       OK ]");
-    ret_err_num  = count_word_num(ret_str, "[  FAILED  ]");
+    ret_err_num  = ret_test_num - ret_pass_num;
     replaced(ret_str, "[  FAILED  ]", console_color::red+"[  FAILED  ]"+console_color::reset);
     replaced(ret_str, "[==========]", console_color::green+"[==========]"+console_color::reset);
     replaced(ret_str, "[----------]", console_color::green+"[----------]"+console_color::reset);
@@ -61,7 +59,7 @@ void execute_test(int& ret_test_num, int& ret_pass_num, int& ret_err_num, std::s
     replaced(ret_str, "[       OK ]", console_color::green+"[       OK ]"+console_color::reset);
     replaced(ret_str, "[  PASSED  ]", console_color::green+"[  PASSED  ]"+console_color::reset);
     
-    if(ret_err_num!=0){ ret_err_file_path=exe_path; }
+    if(ret!=0){ ret_err_file_path=exe_path; }
 }
 void print_pass(int passNum, int fileNum){
     printf("%s\n", (console_color::green+"[----------]"+console_color::reset).c_str());
