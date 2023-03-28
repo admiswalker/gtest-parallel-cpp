@@ -52,12 +52,6 @@ void execute_test(int& ret_test_num, int& ret_pass_num, int& ret_err_num, std::s
     ret_test_num = count_word_num(ret_str, "[ RUN      ]");
     ret_pass_num = count_word_num(ret_str, "[       OK ]");
     ret_err_num  = ret_test_num - ret_pass_num;
-    replaced(ret_str, "[  FAILED  ]", console_color::red+"[  FAILED  ]"+console_color::reset);
-    replaced(ret_str, "[==========]", console_color::green+"[==========]"+console_color::reset);
-    replaced(ret_str, "[----------]", console_color::green+"[----------]"+console_color::reset);
-    replaced(ret_str, "[ RUN      ]", console_color::green+"[ RUN      ]"+console_color::reset);
-    replaced(ret_str, "[       OK ]", console_color::green+"[       OK ]"+console_color::reset);
-    replaced(ret_str, "[  PASSED  ]", console_color::green+"[  PASSED  ]"+console_color::reset);
     
     if(ret!=0){ ret_err_file_path=exe_path; }
 }
@@ -113,11 +107,12 @@ int main(int argc, char** argv){
 
     std::string base_path = "./tmpMake/test";
     
-
+    
     // Testing binaries
     std::vector<std::string> vExePath;
-    vExePath.push_back(base_path+"/"+"example_math.exe"   );
-    vExePath.push_back(base_path+"/"+"example_strEdit.exe");
+    std::string opt = "--gtest_color=yes";
+    vExePath.push_back(base_path+"/"+"example_math.exe "   +opt);
+    vExePath.push_back(base_path+"/"+"example_strEdit.exe "+opt);
     
     
     int fileNum = vExePath.size();
