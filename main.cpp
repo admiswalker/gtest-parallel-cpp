@@ -46,12 +46,91 @@ int count_word_num(const std::string& count_target, const std::string& search_wo
 
     return num;
 }
-void execute_test(int& ret_test_num, int& ret_pass_num, int& ret_err_num, std::string& ret_err_file_path, std::string& ret_str, const std::string& exe_path){
-    int ret = system_stdout_stderr(ret_str, exe_path);
+std::vector<std::string> splitByLine(const char* str){
+
+    std::vector<std::string> ret;
     
-    ret_test_num = count_word_num(ret_str, "[ RUN      ]");
-    ret_pass_num = count_word_num(ret_str, "[       OK ]");
-    ret_err_num  = ret_test_num - ret_pass_num;
+    std::string buf;
+    for(uint r=0; str[r]!=0; ++r){ // r: read place
+        buf.clear();
+        for(; str[r]!=0; ++r){
+            if(str[r]==0x0A){ break; }                        // Uinx
+            if(str[r]==0x0D && str[r+1]==0x0A){ ++r; break; } // Windows
+            buf += str[r];
+        }
+        ret.push_back(std::move(buf));
+    }
+    
+    return ret;
+}
+std::vector<std::string> splitByLine(const std::string& str){
+    return splitByLine(str.c_str());
+}
+std::vector<std::pair<std::string,std::string>> split_test_list(const std::string& s){
+    std::vector<std::pair<std::string,std::string>> ret_v;
+    std::vector<std::string> line = splitByLine(s);
+
+    std::string first;
+    for(uint i=0; i<line.size(); ++i){
+        if(line[i].size()>=2 && line[i][0]==' ' && line[i][1]==' '){
+            std::pair<std::string,std::string> tmp;
+            tmp.first  = first;
+            tmp.second = &line[i][2]; // rm the head "  " at test_name
+            ret_v.push_back(tmp);
+        }else{
+            first = line[i];
+        }
+    }
+    return ret_v;
+}
+int get_test_list(std::vector<std::pair<std::string,std::string>>& ret_v, const std::string& exe_path){
+    
+    std::string ret_str;
+    int ret = system_stdout_stderr(ret_str, exe_path+" --gtest_list_tests");
+    if(ret!=0){ return ret; }
+    
+    ret_v = split_test_list(ret_str);
+    
+    return ret;
+}
+void execute_test(int& ret_test_num, int& ret_pass_num, int& ret_err_num, std::string& ret_err_file_path, std::string& ret_str, const std::string& exe_path, const std::string& google_test_option){
+    
+    std::vector<std::pair<std::string,std::string>> vec_TCN_TN;
+    int ret = get_test_list(vec_TCN_TN, exe_path);
+    if(ret!=0){ ret_err_file_path=exe_path; }
+    
+    //#pragma omp parallel for schedule(guided)
+    for(uint i=0; i<vec_TCN_TN.size(); ++i){
+        std::string testCaseName = vec_TCN_TN[i].first;
+        std::string testName     = vec_TCN_TN[i].second;
+        
+        std::string s;
+        int ret = system_stdout_stderr(s, exe_path+" "+google_test_option+" --gtest_filter="+testCaseName+testName);
+        if(ret==0){ ++ret_pass_num; }else{ ++ret_err_num; }
+
+        std::vector<std::string> vStr = splitByLine(s);
+        ret_str += vStr[4]+"\n";
+        ret_str += vStr[5]+"\n";
+    }
+    ret_test_num=vec_TCN_TN.size();
+
+    /*
+./tmpMake/test/example_math.exe  --gtest_fileter=example_math.plus_a_b
+./tmpMake/test/example_math.exe  --gtest_fileter=example_math.minus_a_b
+./tmpMake/test/example_math.exe  --gtest_fileter=example_math.multi_a_b
+./tmpMake/test/example_strEdit.exe  --gtest_fileter=example_strEdit.joint_a_b
+./tmpMake/test/example_strEdit.exe  --gtest_fileter=example_strEdit.joint_a_b_with_x
+
+*/
+    
+    //int ret = system_stdout_stderr(ret_str, exe_path+" "+"--gtest_list_tests");
+    
+    
+    //int ret = system_stdout_stderr(ret_str, exe_path+" "+google_test_option);
+    
+    //ret_test_num = count_word_num(ret_str, "[ RUN      ]");
+    //ret_pass_num = count_word_num(ret_str, "[       OK ]");
+    //ret_err_num  = ret_test_num - ret_pass_num;
     
     if(ret!=0){ ret_err_file_path=exe_path; }
 }
@@ -106,22 +185,22 @@ int main(int argc, char** argv){
     printf("\n");
 
     std::string base_path = "./tmpMake/test";
+    std::string google_test_option = "--gtest_color=yes";
     
     
     // Testing binaries
     std::vector<std::string> vExePath;
-    std::string opt = "--gtest_color=yes";
-    vExePath.push_back(base_path+"/"+"example_math.exe "   +opt);
-    vExePath.push_back(base_path+"/"+"example_strEdit.exe "+opt);
+    vExePath.push_back(base_path+"/"+"example_math.exe "   );
+    vExePath.push_back(base_path+"/"+"example_strEdit.exe ");
     
     
     int fileNum = vExePath.size();
     std::vector<int> vTestNum(fileNum), vPassNum(fileNum), vErrNum(fileNum);
     std::vector<std::string> vErrPath(fileNum), vRetStr(fileNum);
     
-    #pragma omp parallel for schedule(guided)
+    //#pragma omp parallel for schedule(guided)
     for(uint i=0; i<vExePath.size(); ++i){
-        execute_test(vTestNum[i], vPassNum[i], vErrNum[i], vErrPath[i], vRetStr[i], vExePath[i]);
+        execute_test(vTestNum[i], vPassNum[i], vErrNum[i], vErrPath[i], vRetStr[i], vExePath[i], google_test_option);
     }
     
     vErrPath = rm_empty_vector(vErrPath);
