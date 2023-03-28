@@ -107,32 +107,14 @@ void execute_test(int& ret_test_num, int& ret_pass_num, int& ret_err_num, std::s
         std::string s;
         int ret = system_stdout_stderr(s, exe_path+" "+google_test_option+" --gtest_filter="+testCaseName+testName);
         if(ret==0){ ++ret_pass_num; }else{ ++ret_err_num; }
-
+        
         std::vector<std::string> vStr = splitByLine(s);
         ret_str += vStr[4]+"\n";
         ret_str += vStr[5]+"\n";
     }
     ret_test_num=vec_TCN_TN.size();
-
-    /*
-./tmpMake/test/example_math.exe  --gtest_fileter=example_math.plus_a_b
-./tmpMake/test/example_math.exe  --gtest_fileter=example_math.minus_a_b
-./tmpMake/test/example_math.exe  --gtest_fileter=example_math.multi_a_b
-./tmpMake/test/example_strEdit.exe  --gtest_fileter=example_strEdit.joint_a_b
-./tmpMake/test/example_strEdit.exe  --gtest_fileter=example_strEdit.joint_a_b_with_x
-
-*/
     
-    //int ret = system_stdout_stderr(ret_str, exe_path+" "+"--gtest_list_tests");
-    
-    
-    //int ret = system_stdout_stderr(ret_str, exe_path+" "+google_test_option);
-    
-    //ret_test_num = count_word_num(ret_str, "[ RUN      ]");
-    //ret_pass_num = count_word_num(ret_str, "[       OK ]");
-    //ret_err_num  = ret_test_num - ret_pass_num;
-    
-    if(ret!=0){ ret_err_file_path=exe_path; }
+    if(ret_err_num!=0){ ret_err_file_path=exe_path; }
 }
 void print_pass(int passNum, int fileNum){
     printf("%s\n", (console_color::green+"[----------]"+console_color::reset).c_str());

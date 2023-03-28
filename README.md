@@ -11,3 +11,7 @@
 エラー自体は popen の戻り値から取得しており，エラーの発生に気が付かない可能性は低いが，
 エラーの詳細な数は文字列置換でカウントしているので，googletest のバージョンアップすると，正常に動作しなくなる可能性がある．
 
+## 参考資料
+
+- [Google Test ではテストの並列実行をサポートしていますか？](http://opencv.jp/googletestdocs/FAQ.html#faq-does-google-test-support-in-parallel)
+
