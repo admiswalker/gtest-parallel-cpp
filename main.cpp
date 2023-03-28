@@ -156,6 +156,41 @@ int sum(const std::vector<int>& v){
     return std::accumulate(v.begin(), v.end(), 0);
 }
 
+struct execution_settings{
+    std::string exePath;
+    std::string testCaseName;
+    std::string testName;
+};
+std::vector<struct execution_settings> make_execution_list(const std::vector<std::string>& vExePath){
+    std::vector<struct execution_settings> exeList;
+    std::vector<int> vErrNum(vExePath.size());
+    std::vector<std::vector<struct execution_settings>> v_exeList(vExePath.size());
+    
+    #pragma omp parallel for schedule(guided)
+    for(uint i=0; i<vExePath.size(); ++i){
+        std::vector<std::pair<std::string,std::string>> ret_v;
+        int ret = get_test_list(ret_v, vExePath[i]);
+        if(ret!=0){ vErrNum[i]=1; }
+        
+        std::vector<struct execution_settings> ret_exeList(ret_v.size());
+        for(uint ri=0; ri<ret_exeList.size(); ++ri){
+            ret_exeList[ri].exePath      = vExePath[i];
+            ret_exeList[ri].testCaseName = ret_v[ri].first;
+            ret_exeList[ri].testName     = ret_v[ri].second;
+        }
+        v_exeList[i] = std::move(ret_exeList);
+    }
+
+    int err_num = sum(vErrNum);
+    if(err_num!=0){ printf("make_execution_list() is failed.\n"); return exeList; }
+    
+    for(uint i=0; i<v_exeList.size(); ++i){
+        exeList.insert(exeList.end(), v_exeList[i].begin(), v_exeList[i].end());
+    }
+    
+    return exeList;
+}
+
 int main(int argc, char** argv){
     printf("\n");
     printf("+---------------------------------------------------+\n");
@@ -179,6 +214,11 @@ int main(int argc, char** argv){
     int fileNum = vExePath.size();
     std::vector<int> vTestNum(fileNum), vPassNum(fileNum), vErrNum(fileNum);
     std::vector<std::string> vErrPath(fileNum), vRetStr(fileNum);
+    
+    std::vector<struct execution_settings> exeList = make_execution_list(vExePath);
+    for(uint i=0; i<exeList.size(); ++i){
+        printf("%s %s%s\n", exeList[i].exePath.c_str(), exeList[i].testCaseName.c_str(), exeList[i].testName.c_str());
+    }
     
     //#pragma omp parallel for schedule(guided)
     for(uint i=0; i<vExePath.size(); ++i){
