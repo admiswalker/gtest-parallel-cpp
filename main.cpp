@@ -109,8 +109,19 @@ void execute_test(int& ret_test_num, int& ret_pass_num, int& ret_err_num, std::s
         if(ret==0){ ++ret_pass_num; }else{ ++ret_err_num; }
         
         std::vector<std::string> vStr = splitByLine(s);
-        ret_str += vStr[4]+"\n";
-        ret_str += vStr[5]+"\n";
+
+        uint ri=0;
+        for(; ri<vStr.size(); ++ri){
+            if(vStr[ri].find("[ RUN      ]")==std::string::npos){ continue; }
+            ret_str += vStr[ri]+"\n";
+            ++ri;
+            break;
+        }
+        for(; ri<vStr.size(); ++ri){
+            ret_str += vStr[ri]+"\n";
+            if(vStr[ri].find("[       OK ]")!=std::string::npos){ break; }
+            if(vStr[ri].find("[  FAILED  ]")!=std::string::npos){ break; }
+        }
     }
     ret_test_num=vec_TCN_TN.size();
     
