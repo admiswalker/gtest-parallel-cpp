@@ -232,6 +232,7 @@ void print_results(omp_lock_t& omp_lock, uint& i_end_num, const std::vector<int>
     
     for(uint i=i_end_num; i<vEnd.size(); ++i){
         if(vEnd[i]==0){ break; }
+        
         printf("%s", vRet[i].c_str());
         i_end_num = i+1;
     }
@@ -242,6 +243,7 @@ void print_results(uint& i_end_num, const std::vector<int>& vEnd, const std::vec
     
     for(uint i=i_end_num; i<vEnd.size(); ++i){
         if(vEnd[i]==0){ break; }
+        
         printf("%s", vRet[i].c_str());
         i_end_num = i+1;
     }
@@ -290,7 +292,7 @@ int main(int argc, char** argv){
         print_results(omp_lock, i_end_num, vEnd, vRet);
     }
     omp_destroy_lock(&omp_lock); // destroy
-    print_results(i_end_num, vEnd, vRet); // xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    print_results(i_end_num, vEnd, vRet);
     
     //vErrPath = rm_empty_list(vFailedTest);
     
