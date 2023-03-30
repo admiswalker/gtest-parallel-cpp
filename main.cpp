@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <numeric>
+#include <omp.h>
 
 
 namespace console_color{
@@ -93,7 +94,7 @@ int get_test_list(std::vector<std::pair<std::string,std::string>>& ret_v, const 
     
     return ret;
 }
-void execute_test(int& ret_test_num, int& ret_pass_num, int& ret_err_num, std::string& ret_err_file_path, std::string& ret_str, const std::string& exe_path, const std::string& google_test_option){
+void execute_test__old(int& ret_test_num, int& ret_pass_num, int& ret_err_num, std::string& ret_err_file_path, std::string& ret_str, const std::string& exe_path, const std::string& google_test_option){
     
     std::vector<std::pair<std::string,std::string>> vec_TCN_TN;
     int ret = get_test_list(vec_TCN_TN, exe_path);
@@ -201,6 +202,50 @@ std::vector<struct execution_settings> make_execution_list(const std::vector<std
     
     return exeList;
 }
+void execute_tests(int& tf_end, int& failed, struct execution_settings& failedTest, std::string& ret_str, struct execution_settings& exeList, const std::string& google_test_option){
+
+    std::string s;
+    int ret = system_stdout_stderr(s, exeList.exePath+" "+google_test_option+" --gtest_filter="+exeList.testCaseName+exeList.testName);
+    if(ret!=0){
+        failed = 1;
+        failedTest = exeList;
+    }
+    
+    std::vector<std::string> vStr = splitByLine(s);
+    uint ri=0;
+    for(; ri<vStr.size(); ++ri){
+        if(vStr[ri].find("[ RUN      ]")==std::string::npos){ continue; }
+        ret_str += vStr[ri]+"\n";
+        ++ri;
+        break;
+    }
+    for(; ri<vStr.size(); ++ri){
+        ret_str += vStr[ri]+"\n";
+        if(vStr[ri].find("[       OK ]")!=std::string::npos){ break; }
+        if(vStr[ri].find("[  FAILED  ]")!=std::string::npos){ break; }
+    }
+
+    tf_end=1;
+}
+void print_results(omp_lock_t& omp_lock, uint& i_end_num, const std::vector<int>& vEnd, const std::vector<std::string>& vRet){
+    if(omp_test_lock(&omp_lock)==0){ return; } // return when the lock failed
+    
+    for(uint i=i_end_num; i<vEnd.size(); ++i){
+        if(vEnd[i]==0){ break; }
+        printf("%s", vRet[i].c_str());
+        i_end_num = i+1;
+    }
+    
+    omp_unset_lock(&omp_lock);
+}
+void print_results(uint& i_end_num, const std::vector<int>& vEnd, const std::vector<std::string>& vRet){
+    
+    for(uint i=i_end_num; i<vEnd.size(); ++i){
+        if(vEnd[i]==0){ break; }
+        printf("%s", vRet[i].c_str());
+        i_end_num = i+1;
+    }
+}
 
 int main(int argc, char** argv){
     printf("\n");
@@ -230,17 +275,28 @@ int main(int argc, char** argv){
     for(uint i=0; i<exeList.size(); ++i){
         printf("%s %s%s\n", exeList[i].exePath.c_str(), exeList[i].testCaseName.c_str(), exeList[i].testName.c_str());
     }
+
+    uint i_end_num=0;
+    std::vector<int> vEnd(exeList.size(), 0);
+    std::vector<int> vFailed(exeList.size(), 0);
+    std::vector<struct execution_settings> vFailedTest(exeList.size());
+    std::vector<std::string> vRet(exeList.size());
     
-    //#pragma omp parallel for schedule(guided)
-    for(uint i=0; i<vExePath.size(); ++i){
-        execute_test(vTestNum[i], vPassNum[i], vErrNum[i], vErrPath[i], vRetStr[i], vExePath[i], google_test_option);
+    omp_lock_t omp_lock;
+    omp_init_lock(&omp_lock); // init
+    #pragma omp parallel for schedule(guided)
+    for(uint i=0; i<exeList.size(); ++i){
+        execute_tests(vEnd[i], vFailed[i], vFailedTest[i], vRet[i], exeList[i], google_test_option);
+        print_results(omp_lock, i_end_num, vEnd, vRet);
     }
+    omp_destroy_lock(&omp_lock); // destroy
+    print_results(i_end_num, vEnd, vRet); // xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
     
-    vErrPath = rm_empty_vector(vErrPath);
+    //vErrPath = rm_empty_list(vFailedTest);
     
-    for(uint i=0; i<vRetStr.size(); ++i){ printf("%s\n", vRetStr[i].c_str()); }
-    print_pass(sum(vPassNum), fileNum);
-    print_failure(base_path, vErrPath, sum(vErrNum));
+    //for(uint i=0; i<vRetStr.size(); ++i){ printf("%s\n", vRetStr[i].c_str()); }
+    //print_pass(sum(vPassNum), fileNum);
+    //print_failure(base_path, vErrPath, sum(vErrNum));
     printf("\n");
     
     if(vErrPath.size()!=0){ return -1; }
