@@ -1,4 +1,4 @@
-#include "test_main.hpp"
+#include "../gtest_parallel/test_main.hpp"
 #include "../src/example_math.cpp"
 
 
