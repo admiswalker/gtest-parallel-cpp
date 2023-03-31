@@ -1,17 +1,49 @@
-# sample_separate-compilation-of-googletest
+# gtest-parallel-cpp
 
-このサンプルでは，GoogleTest で記述されたテストファイルごとにコンパイルして，
-エントリーポイントとなる main.cpp よりまとめて実行する．
+gtest-parallel-cpp is a the single header library to the separate Compilation and parallel execution of the [GoogleTest](https://github.com/google/googletest) written in C++ and OpenMP.
 
-テストファルが長大になった場合に，分割コンパイルでコンパイル時間を短縮することが目的である．
-また，OpenMP で並列化しており，コンパイル単位で並列実行するようにしてある．
+gtest-parallel-cpp は，[GoogleTest](https://github.com/google/googletest) を並列コンパイル・並列実行するための C++ で書かれたシングルヘッダライブラリです．
 
-## 注意点
+## Usage
 
-エラー自体は popen の戻り値から取得しており，エラーの発生に気が付かない可能性は低いが，
-エラーの詳細な数は文字列置換でカウントしているので，googletest のバージョンアップすると，正常に動作しなくなる可能性がある．
+1. Copy the `gtest_parallel` directory
+2. Add the following header and execution definition to the test code written in Googletest.
+   ```cpp
+   #include "../gtest_parallel/test_main.hpp"
+   ```
+   ```cpp
+   EXECUTE_TESTS(); // Write in the bottom of test code.
+   ```
+3. Compile your test code
+4. Write the entry point of gtest-parallel-cpp and write the executing binary path.
+   ```cpp
+   #include "gtest_parallel/gtest_parallel.hpp"
+   
+   int main(int argc, char** argv){
+       printf("\n");
+       printf("+---------------------------------------------------+\n");
+       printf("|                                                   |\n");
+       printf("|             Welcome to the Sample of              |\n");
+       printf("|    Separate Compilation and Parallel Execution    |\n");
+       printf("|                 of the googletest                 |\n");
+       printf("|                                                   |\n");
+       printf("+---------------------------------------------------+\n");
+       printf("\n");
+   
+       std::string base_path = "./tmpMake/test";
+       
+       // Testing binaries
+       std::vector<std::string> vExePath;
+       vExePath.push_back(base_path+"/"+"example_math.exe "   ); // replace your binary path
+       vExePath.push_back(base_path+"/"+"example_strEdit.exe "); // replace your binary path
+   
+       int ret = gtest_parallel::run_tests(vExePath);
+   
+       return ret;
+      }
+   ```
+5. Compile entry point of gtest-parallel-cpp and execute.
 
-## 参考資料
+## Execution view
 
-- [Google Test ではテストの並列実行をサポートしていますか？](http://opencv.jp/googletestdocs/FAQ.html#faq-does-google-test-support-in-parallel)
-
+See GitHub Actions.
