@@ -13,7 +13,6 @@ int main(int argc, char** argv){
     printf("\n");
 
     std::string base_path = "./tmpMake/test";
-    std::string google_test_option = "--gtest_color=yes";
     
     // Testing binaries
     std::vector<std::string> vExePath;

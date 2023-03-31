@@ -29,7 +29,7 @@ TEST_HEADS := $(shell find $(TEST_DIR) -type f -name '*.hpp')
 TEST_EXES  := $(addprefix $(TEMP_DIR)/, $(patsubst %.cpp, %.exe, $(TEST_SRCS)))
 
 GTEST_PARALLEL      = ./gtest_parallel/gtest_parallel.hpp
-GTEST_PARALLEL_MAIN = ./gtest_parallel/test_main.cpp
+GTEST_PARALLEL_MAIN = ./gtest_parallel/test_main.hpp
 
 $(TARGET): $(LIB_GOOGLETEST) $(SRCS) $(HEADS) $(HEADS_t) $(TEST_EXES) $(GTEST_PARALLEL)
 	@echo "\n============================================================\n"
