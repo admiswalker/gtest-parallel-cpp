@@ -128,21 +128,13 @@ void execute_test__old(int& ret_test_num, int& ret_pass_num, int& ret_err_num, s
     
     if(ret_err_num!=0){ ret_err_file_path=exe_path; }
 }
-void print_pass(int passNum, int fileNum){
-    printf("%s\n", (console_color::green+"[----------]"+console_color::reset).c_str());
-    printf("%s %d tests from %d test files ran.\n", (console_color::green+"[==========]"+console_color::reset).c_str(), passNum, fileNum);
-    printf("%s %d tests.\n", (console_color::green+"[  PASSED  ]"+console_color::reset).c_str(), passNum);
-    return ;
-}
-void print_failure(const std::string& base_path, const std::vector<std::string>& vErrPath, int errNum){
-    if(vErrPath.size()!=0){
-        printf("%s %d test%s of %ld test executor%s, listed below:\n", (console_color::red+"[  FAILED  ]"+console_color::reset).c_str(), errNum, (errNum==1?"":"s"), vErrPath.size(), (vErrPath.size()==1?"":"s"));
-    }
-    
-    for(uint i=0; i<vErrPath.size(); ++i){
-        printf("%s %s\n", (console_color::red+"[  FAILED  ]"+console_color::reset).c_str(), vErrPath[i].c_str());
-    }
-}
+
+struct execution_settings{
+    std::string exePath;
+    std::string testCaseName;
+    std::string testName;
+};
+
 std::vector<int> rm_zero_vector(const std::vector<int>& v){
     std::vector<int> ret_v;
     
@@ -154,11 +146,14 @@ std::vector<int> rm_zero_vector(const std::vector<int>& v){
     return ret_v;
 }
 template<typename T>
+bool check_empty(const T& rhs){ return rhs.size(); }
+bool check_empty(const struct execution_settings& rhs){ return rhs.exePath.size(); }
+template<typename T>
 std::vector<T> rm_empty_vector(const std::vector<T>& v){
-    std::vector<std::string> ret_v;
+    std::vector<T> ret_v;
     
     for(uint i=0; i<v.size(); ++i){
-        if(v[i].size()==0){ continue; }
+        if(check_empty(v[i])==0){ continue; }
         ret_v.push_back(v[i]);
     }
     
@@ -168,11 +163,6 @@ int sum(const std::vector<int>& v){
     return std::accumulate(v.begin(), v.end(), 0);
 }
 
-struct execution_settings{
-    std::string exePath;
-    std::string testCaseName;
-    std::string testName;
-};
 std::vector<struct execution_settings> make_execution_list(const std::vector<std::string>& vExePath){
     std::vector<struct execution_settings> exeList;
     std::vector<int> vErrNum(vExePath.size());
@@ -249,6 +239,32 @@ void print_results(uint& i_end_num, const std::vector<int>& vEnd, const std::vec
     }
 }
 
+void print_pass(int passNum, int fileNum){
+    printf("%s\n", (console_color::green+"[----------]"+console_color::reset).c_str());
+    printf("%s %d tests from %d test files ran.\n", (console_color::green+"[==========]"+console_color::reset).c_str(), passNum, fileNum);
+    printf("%s %d tests.\n", (console_color::green+"[  PASSED  ]"+console_color::reset).c_str(), passNum);
+    return ;
+}
+void print_failure(const std::string& base_path, const std::vector<std::string>& vErrPath, int errNum){
+    if(vErrPath.size()!=0){
+        printf("%s %d test%s of %ld test executor%s, listed below:\n", (console_color::red+"[  FAILED  ]"+console_color::reset).c_str(), errNum, (errNum==1?"":"s"), vErrPath.size(), (vErrPath.size()==1?"":"s"));
+    }
+    
+    for(uint i=0; i<vErrPath.size(); ++i){
+        printf("%s %s\n", (console_color::red+"[  FAILED  ]"+console_color::reset).c_str(), vErrPath[i].c_str());
+    }
+}
+void print_abst(const uint testNum, const std::vector<struct execution_settings>& vFailedTest){
+    const uint failedNum = vFailedTest.size();
+    const uint passNum   = testNum - failedNum;
+    
+    printf("\n");
+    printf("%s %d test%s ran.\n",    (console_color::green+"[==========]"+console_color::reset).c_str(),   testNum, (  testNum>=2?"s":""));
+    printf("%s %d test%s.\n",        (console_color::green+"[  PASSED  ]"+console_color::reset).c_str(),   passNum, (  passNum>=2?"s":""));
+    printf("%s %d test%s failed.\n", (console_color::red  +"[  FAILED  ]"+console_color::reset).c_str(), failedNum, (failedNum>=2?"s":""));
+    printf("\n");
+}
+
 int main(int argc, char** argv){
     printf("\n");
     printf("+---------------------------------------------------+\n");
@@ -269,14 +285,8 @@ int main(int argc, char** argv){
     vExePath.push_back(base_path+"/"+"example_strEdit.exe ");
     
     
-    int fileNum = vExePath.size();
-    std::vector<int> vTestNum(fileNum), vPassNum(fileNum), vErrNum(fileNum);
-    std::vector<std::string> vErrPath(fileNum), vRetStr(fileNum);
-    
     std::vector<struct execution_settings> exeList = make_execution_list(vExePath);
-    for(uint i=0; i<exeList.size(); ++i){
-        printf("%s %s%s\n", exeList[i].exePath.c_str(), exeList[i].testCaseName.c_str(), exeList[i].testName.c_str());
-    }
+    uint testNum = exeList.size();
 
     uint i_end_num=0;
     std::vector<int> vEnd(exeList.size(), 0);
@@ -284,6 +294,7 @@ int main(int argc, char** argv){
     std::vector<struct execution_settings> vFailedTest(exeList.size());
     std::vector<std::string> vRet(exeList.size());
     
+    printf("%s Running %d test%s.\n", (console_color::green+"[==========]"+console_color::reset).c_str(), testNum, (testNum>=2?"s":""));
     omp_lock_t omp_lock;
     omp_init_lock(&omp_lock); // init
     #pragma omp parallel for schedule(guided)
@@ -294,13 +305,9 @@ int main(int argc, char** argv){
     omp_destroy_lock(&omp_lock); // destroy
     print_results(i_end_num, vEnd, vRet);
     
-    //vErrPath = rm_empty_list(vFailedTest);
+    vFailedTest = rm_empty_vector(vFailedTest);
+    print_abst(testNum, vFailedTest);
     
-    //for(uint i=0; i<vRetStr.size(); ++i){ printf("%s\n", vRetStr[i].c_str()); }
-    //print_pass(sum(vPassNum), fileNum);
-    //print_failure(base_path, vErrPath, sum(vErrNum));
-    printf("\n");
-    
-    if(vErrPath.size()!=0){ return -1; }
+    if(vFailedTest.size()!=0){ return -1; }
     return 0;
 }
