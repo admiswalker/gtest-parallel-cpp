@@ -191,8 +191,8 @@ namespace gtest_parallel{
     
         printf("\n");
         printf("%s %d test%s ran.\n",    (console_color::green+"[==========]"+console_color::reset).c_str(),   testNum, (  testNum>=2?"s":""));
-        printf("%s %d test%s.\n",        (console_color::green+"[  PASSED  ]"+console_color::reset).c_str(),   passNum, (  passNum>=2?"s":""));
-        printf("%s %d test%s failed.\n", (console_color::red  +"[  FAILED  ]"+console_color::reset).c_str(), failedNum, (failedNum>=2?"s":""));
+        if(passNum  !=0){ printf("%s %d test%s.\n",        (console_color::green+"[  PASSED  ]"+console_color::reset).c_str(),   passNum, (  passNum>=2?"s":"")); }
+        if(failedNum!=0){ printf("%s %d test%s failed.\n", (console_color::red  +"[  FAILED  ]"+console_color::reset).c_str(), failedNum, (failedNum>=2?"s":"")); }
         printf("\n");
     }
 

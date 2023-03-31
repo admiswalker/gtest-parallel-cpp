@@ -28,8 +28,10 @@ TEST_SRCS  := $(shell find $(TEST_DIR) -type f -name '*.cpp')
 TEST_HEADS := $(shell find $(TEST_DIR) -type f -name '*.hpp')
 TEST_EXES  := $(addprefix $(TEMP_DIR)/, $(patsubst %.cpp, %.exe, $(TEST_SRCS)))
 
+GTEST_PARALLEL      = ./gtest_parallel/gtest_parallel.hpp
+GTEST_PARALLEL_MAIN = ./gtest_parallel/test_main.cpp
 
-$(TARGET): $(LIB_GOOGLETEST) $(SRCS) $(HEADS) $(HEADS_t) $(TEST_EXES)
+$(TARGET): $(LIB_GOOGLETEST) $(SRCS) $(HEADS) $(HEADS_t) $(TEST_EXES) $(GTEST_PARALLEL)
 	@echo "\n============================================================\n"
 	@echo "SRCS: \n$(SRCS)\n"
 	@echo "CFLAGS: \n$(CFLAGS)"
@@ -45,7 +47,7 @@ $(LIB_GOOGLETEST):
 
 
 # 各ファイルの分割コンパイル
-$(TEMP_DIR)/%.exe: %.cpp $(TEST_HEADS) $(LIB_GOOGLETEST)
+$(TEMP_DIR)/%.exe: %.cpp $(TEST_HEADS) $(LIB_GOOGLETEST) $(GTEST_PARALLEL_MAIN)
 	@echo ""
 	mkdir -p $(dir $@);\
 	$(CXX) -o $@ $< $(CFLAGS)
