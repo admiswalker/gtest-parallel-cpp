@@ -17,6 +17,13 @@ namespace console_color{
     std::string reset   = "\u001b[0m";
 }
 
+struct execution_settings{
+    std::string exePath;
+    std::string testCaseName;
+    std::string testName;
+};
+
+
 int system_stdout_stderr(std::string& ret, const std::string& cmd){
     std::string cmd_out_err = cmd + std::string(R"( 2>&1)"); // 2>&1: redirecting stderr to stdout.
     FILE* fp=popen(cmd_out_err.c_str(), "r");
@@ -26,26 +33,6 @@ int system_stdout_stderr(std::string& ret, const std::string& cmd){
     while(fgets(buf, 1024, fp) != NULL){ ret+=buf; }
     
     return pclose(fp);
-}
-void replaced(std::string& replace_target, const std::string& search_word, const std::string& replace_word){
-    std::string::size_type pos(replace_target.find(search_word));
-    
-    while(pos!=std::string::npos){
-        replace_target.replace(pos, search_word.length(), replace_word);
-        pos = replace_target.find(search_word, pos+replace_word.length());
-    }
-}
-int count_word_num(const std::string& count_target, const std::string& search_word){
-    int num=0;
-    
-    std::string::size_type pos(count_target.find(search_word));
-    
-    while(pos!=std::string::npos){
-        ++num;
-        pos = count_target.find(search_word, pos+search_word.length());
-    }
-
-    return num;
 }
 std::vector<std::string> splitByLine(const char* str){
 
@@ -94,46 +81,7 @@ int get_test_list(std::vector<std::pair<std::string,std::string>>& ret_v, const 
     
     return ret;
 }
-void execute_test__old(int& ret_test_num, int& ret_pass_num, int& ret_err_num, std::string& ret_err_file_path, std::string& ret_str, const std::string& exe_path, const std::string& google_test_option){
-    
-    std::vector<std::pair<std::string,std::string>> vec_TCN_TN;
-    int ret = get_test_list(vec_TCN_TN, exe_path);
-    if(ret!=0){ ret_err_file_path=exe_path; }
-    
-    //#pragma omp parallel for schedule(guided)
-    for(uint i=0; i<vec_TCN_TN.size(); ++i){
-        std::string testCaseName = vec_TCN_TN[i].first;
-        std::string testName     = vec_TCN_TN[i].second;
-        
-        std::string s;
-        int ret = system_stdout_stderr(s, exe_path+" "+google_test_option+" --gtest_filter="+testCaseName+testName);
-        if(ret==0){ ++ret_pass_num; }else{ ++ret_err_num; }
-        
-        std::vector<std::string> vStr = splitByLine(s);
 
-        uint ri=0;
-        for(; ri<vStr.size(); ++ri){
-            if(vStr[ri].find("[ RUN      ]")==std::string::npos){ continue; }
-            ret_str += vStr[ri]+"\n";
-            ++ri;
-            break;
-        }
-        for(; ri<vStr.size(); ++ri){
-            ret_str += vStr[ri]+"\n";
-            if(vStr[ri].find("[       OK ]")!=std::string::npos){ break; }
-            if(vStr[ri].find("[  FAILED  ]")!=std::string::npos){ break; }
-        }
-    }
-    ret_test_num=vec_TCN_TN.size();
-    
-    if(ret_err_num!=0){ ret_err_file_path=exe_path; }
-}
-
-struct execution_settings{
-    std::string exePath;
-    std::string testCaseName;
-    std::string testName;
-};
 
 std::vector<int> rm_zero_vector(const std::vector<int>& v){
     std::vector<int> ret_v;
@@ -217,18 +165,6 @@ void execute_tests(int& tf_end, int& failed, struct execution_settings& failedTe
 
     tf_end=1;
 }
-void print_results(omp_lock_t& omp_lock, uint& i_end_num, const std::vector<int>& vEnd, const std::vector<std::string>& vRet){
-    if(omp_test_lock(&omp_lock)==0){ return; } // return when the lock failed
-    
-    for(uint i=i_end_num; i<vEnd.size(); ++i){
-        if(vEnd[i]==0){ break; }
-        
-        printf("%s", vRet[i].c_str());
-        i_end_num = i+1;
-    }
-    
-    omp_unset_lock(&omp_lock);
-}
 void print_results(uint& i_end_num, const std::vector<int>& vEnd, const std::vector<std::string>& vRet){
     
     for(uint i=i_end_num; i<vEnd.size(); ++i){
@@ -238,22 +174,14 @@ void print_results(uint& i_end_num, const std::vector<int>& vEnd, const std::vec
         i_end_num = i+1;
     }
 }
-
-void print_pass(int passNum, int fileNum){
-    printf("%s\n", (console_color::green+"[----------]"+console_color::reset).c_str());
-    printf("%s %d tests from %d test files ran.\n", (console_color::green+"[==========]"+console_color::reset).c_str(), passNum, fileNum);
-    printf("%s %d tests.\n", (console_color::green+"[  PASSED  ]"+console_color::reset).c_str(), passNum);
-    return ;
-}
-void print_failure(const std::string& base_path, const std::vector<std::string>& vErrPath, int errNum){
-    if(vErrPath.size()!=0){
-        printf("%s %d test%s of %ld test executor%s, listed below:\n", (console_color::red+"[  FAILED  ]"+console_color::reset).c_str(), errNum, (errNum==1?"":"s"), vErrPath.size(), (vErrPath.size()==1?"":"s"));
-    }
+void print_results(omp_lock_t& omp_lock, uint& i_end_num, const std::vector<int>& vEnd, const std::vector<std::string>& vRet){
+    if(omp_test_lock(&omp_lock)==0){ return; } // return when the lock failed
     
-    for(uint i=0; i<vErrPath.size(); ++i){
-        printf("%s %s\n", (console_color::red+"[  FAILED  ]"+console_color::reset).c_str(), vErrPath[i].c_str());
-    }
+    print_results(i_end_num, vEnd, vRet);
+    
+    omp_unset_lock(&omp_lock);
 }
+
 void print_abst(const uint testNum, const std::vector<struct execution_settings>& vFailedTest){
     const uint failedNum = vFailedTest.size();
     const uint passNum   = testNum - failedNum;
