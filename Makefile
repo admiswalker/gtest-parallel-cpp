@@ -47,7 +47,7 @@ $(LIB_GOOGLETEST):
 
 
 # 各ファイルの分割コンパイル
-$(TEMP_DIR)/%.exe: %.cpp $(TEST_HEADS) $(LIB_GOOGLETEST) $(GTEST_PARALLEL_MAIN)
+$(TEMP_DIR)/%.exe: %.cpp $(TEST_HEADS) $(LIB_GOOGLETEST) $(GTEST_PARALLEL_MAIN) ./src/example_math.cpp ./src/example_strEdit.cpp
 	@echo ""
 	mkdir -p $(dir $@);\
 	$(CXX) -o $@ $< $(CFLAGS)

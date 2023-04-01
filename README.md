@@ -47,3 +47,23 @@ gtest-parallel-cpp は，[GoogleTest](https://github.com/google/googletest) を�
 ## Execution view
 
 See GitHub Actions.
+
+## Appendix
+
+### Get TestCaseName and TestName in GoogleTest
+
+```cpp
+TEST(testCaseName, testName){
+    const auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
+    printf("%s\n", test_info->test_case_name());
+    printf("%s\n", test_info->name()          );
+}
+```
+OR
+```cpp
+TEST(testCaseName, testName){
+    printf("%s\n", test_info_->test_case_name());
+    printf("%s\n", test_info_->name()          );
+}
+```
+
