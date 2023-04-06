@@ -119,7 +119,7 @@ namespace gtest_parallel{
         std::vector<int> vErrNum(vExePath.size());
         std::vector<std::vector<struct execution_settings>> v_exeList(vExePath.size());
     
-#pragma omp parallel for schedule(guided)
+#pragma omp parallel for schedule(dynamic)
         for(uint i=0; i<vExePath.size(); ++i){
             std::vector<std::pair<std::string,std::string>> ret_v;
             int ret = get_test_list(ret_v, vExePath[i]);
@@ -195,7 +195,24 @@ namespace gtest_parallel{
         if(failedNum!=0){ printf("%s %d test%s failed.\n", (console_color::red  +"[  FAILED  ]"+console_color::reset).c_str(), failedNum, (failedNum>=2?"s":"")); }
         printf("\n");
     }
-
+    
+    //---
+    
+    std::vector<std::string> get_exeList(const char* pSearchPath, const char* pSearchName){
+        std::string retStr;
+        std::string cmd;
+        cmd = std::string("find ") + pSearchPath + " -name " + pSearchName;
+        int ret = system_stdout_stderr(retStr, cmd);
+        if(ret!=0){ printf("ERROR: get_exeList() is failed\n"); }
+        
+        return splitByLine(retStr);
+    }
+    std::vector<std::string> get_exeList(const std::string& searchPath, const std::string& searchName){
+        return get_exeList(searchPath.c_str(), searchName.c_str());
+    }
+    
+    //---
+    
     int run_tests(const std::vector<std::string>& vExePath){
         std::string google_test_option = "--gtest_color=yes";
     
@@ -211,7 +228,7 @@ namespace gtest_parallel{
         printf("%s Running %d test%s.\n", (console_color::green+"[==========]"+console_color::reset).c_str(), testNum, (testNum>=2?"s":""));
         omp_lock_t omp_lock;
         omp_init_lock(&omp_lock); // init
-#pragma omp parallel for schedule(guided)
+#pragma omp parallel for schedule(dynamic)
         for(uint i=0; i<exeList.size(); ++i){
             execute_tests(vEnd[i], vFailed[i], vFailedTest[i], vRet[i], exeList[i], google_test_option);
             print_results(omp_lock, i_end_num, vEnd, vRet);
