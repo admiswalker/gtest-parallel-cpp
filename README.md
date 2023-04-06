@@ -42,7 +42,7 @@ gtest-parallel-cpp は，[GoogleTest](https://github.com/google/googletest) を�
        return ret;
       }
    ```
-5. Compile entry point of gtest-parallel-cpp and execute.
+5. Compile entry point of gtest-parallel-cpp and execute.  
    Note: Adding a `-fopenmp` option is required.
 
 ## Execution view
