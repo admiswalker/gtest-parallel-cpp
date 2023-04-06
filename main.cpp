@@ -7,7 +7,7 @@ int main(int argc, char** argv){
     printf("|                                                   |\n");
     printf("|             Welcome to the Sample of              |\n");
     printf("|    Separate Compilation and Parallel Execution    |\n");
-    printf("|                 of the googletest                 |\n");
+    printf("|                 of the GoogleTest                 |\n");
     printf("|                                                   |\n");
     printf("+---------------------------------------------------+\n");
     printf("\n");
