@@ -1,8 +1,8 @@
 # gtest-parallel-cpp
 
-gtest-parallel-cpp is a the single header library to the separate Compilation and parallel execution of the [GoogleTest](https://github.com/google/googletest) written in C++ and OpenMP.
+gtest-parallel-cpp is a the single header library to the separate Compilation and parallel execution of the [GoogleTest](https://github.com/google/googletest) written in C++ and OpenMP. Each test is run independently for each test case. Execution results are displayed in order.
 
-gtest-parallel-cpp は，[GoogleTest](https://github.com/google/googletest) を並列コンパイル・並列実行するための C++ で書かれたシングルヘッダライブラリです．
+gtest-parallel-cpp は，[GoogleTest](https://github.com/google/googletest) を並列コンパイル・並列実行するための C++ で書かれたシングルヘッダライブラリです．各テストはテストケースごとに独立に実行されます．実行結果は，順序を守って表示されます．
 
 ## Usage
 
